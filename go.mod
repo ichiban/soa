@@ -1,4 +1,4 @@
-module soa
+module github.com/ichiban/soa
 
 go 1.23
 
