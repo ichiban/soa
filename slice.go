@@ -1,6 +1,8 @@
 package soa
 
-import "iter"
+import (
+	"iter"
+)
 
 // Slice is a structure-of-arrays slice derived from a struct E.
 type Slice[S Slicer[S], E any] interface {
@@ -71,4 +73,20 @@ func Backward[S Slice[S, E], E any](s S) iter.Seq2[int, E] {
 			}
 		}
 	}
+}
+
+// BinarySearchFunc searches for target in a sorted Slice.
+// BinarySearch without a comparison function is not implemented because the element struct cannot be cmp.Ordered.
+func BinarySearchFunc[S Slice[S, E], E, T any](x S, target T, cmp func(E, T) int) (int, bool) {
+	length := x.Len()
+	low, high := 0, length
+	for low < high {
+		mid := int(uint(low+high) >> 1)
+		if cmp(x.Get(mid), target) < 0 {
+			low = mid + 1
+		} else {
+			high = mid
+		}
+	}
+	return low, low < length && cmp(x.Get(low), target) == 0
 }

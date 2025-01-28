@@ -135,3 +135,22 @@ func TestBackward(t *testing.T) {
 		}
 	}
 }
+
+func TestBinarySearchFunc(t *testing.T) {
+	users := []User{
+		{ID: 1, Name: "Alice"},
+		{ID: 2, Name: "Bob"},
+		{ID: 3, Name: "Charlie"},
+	}
+	s := Append(Make[UserSlice](0, 3), users...)
+
+	n, ok := BinarySearchFunc(s, 2, func(u User, n int) int {
+		return u.ID - n
+	})
+	if n != 1 {
+		t.Error("BinarySearchFunc didn't find user")
+	}
+	if !ok {
+		t.Error("BinarySearchFunc didn't find user")
+	}
+}
