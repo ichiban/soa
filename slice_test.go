@@ -1,9 +1,56 @@
 package soa
 
 import (
+	"reflect"
 	"slices"
 	"testing"
 )
+
+type User struct {
+	ID   int
+	Name string
+}
+
+type UserSlice struct {
+	ID   []int
+	Name []string
+}
+
+var _ Slice[UserSlice, User] = UserSlice{}
+
+func (s UserSlice) Get(i int) User {
+	var u User
+	u.ID = s.ID[i]
+	u.Name = s.Name[i]
+	return u
+}
+
+func (s UserSlice) Set(i int, t User) {
+	s.ID[i] = t.ID
+	s.Name[i] = t.Name
+}
+
+func (s UserSlice) Len() int {
+	return len(s.ID)
+}
+
+func (s UserSlice) Cap() int {
+	return min(cap(s.ID), cap(s.Name))
+}
+
+func (s UserSlice) Slice(low, high, max int) UserSlice {
+	return UserSlice{
+		ID:   s.ID[low:high:max],
+		Name: s.Name[low:high:max],
+	}
+}
+
+func (s UserSlice) Grow(n int) UserSlice {
+	return UserSlice{
+		ID:   slices.Grow(s.ID, n),
+		Name: slices.Grow(s.Name, n),
+	}
+}
 
 func TestMake(t *testing.T) {
 	s := Make[UserSlice](0, 3)
@@ -55,48 +102,18 @@ func TestAll(t *testing.T) {
 	}
 }
 
-type User struct {
-	ID   int
-	Name string
-}
-
-type UserSlice struct {
-	ID   []int
-	Name []string
-}
-
-var _ Slice[UserSlice, User] = UserSlice{}
-
-func (s UserSlice) Get(i int) User {
-	var u User
-	u.ID = s.ID[i]
-	u.Name = s.Name[i]
-	return u
-}
-
-func (s UserSlice) Set(i int, t User) {
-	s.ID[i] = t.ID
-	s.Name[i] = t.Name
-}
-
-func (s UserSlice) Len() int {
-	return len(s.ID)
-}
-
-func (s UserSlice) Cap() int {
-	return min(cap(s.ID), cap(s.Name))
-}
-
-func (s UserSlice) Slice(low, high, max int) UserSlice {
-	return UserSlice{
-		ID:   s.ID[low:high:max],
-		Name: s.Name[low:high:max],
+func TestAppendSeq(t *testing.T) {
+	users := []User{
+		{ID: 1, Name: "Alice"},
+		{ID: 2, Name: "Bob"},
+		{ID: 3, Name: "Charlie"},
 	}
-}
+	s := AppendSeq(Make[UserSlice](0, 3), slices.Values(users))
 
-func (s UserSlice) Grow(n int) UserSlice {
-	return UserSlice{
-		ID:   slices.Grow(s.ID, n),
-		Name: slices.Grow(s.Name, n),
+	if !reflect.DeepEqual(UserSlice{
+		ID:   []int{1, 2, 3},
+		Name: []string{"Alice", "Bob", "Charlie"},
+	}, s) {
+		t.Error("AppendSeq didn't append to slice")
 	}
 }

@@ -53,3 +53,11 @@ func All[S Slice[S, E], E any](slice S) iter.Seq2[int, E] {
 		}
 	}
 }
+
+// AppendSeq appends the values from seq to the slice and returns the extended slice.
+func AppendSeq[S Slice[S, E], E any](s S, seq iter.Seq[E]) S {
+	for e := range seq {
+		s = Append(s, e)
+	}
+	return s
+}
