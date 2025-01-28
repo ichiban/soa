@@ -117,3 +117,21 @@ func TestAppendSeq(t *testing.T) {
 		t.Error("AppendSeq didn't append to slice")
 	}
 }
+
+func TestBackward(t *testing.T) {
+	users := []User{
+		{ID: 1, Name: "Alice"},
+		{ID: 2, Name: "Bob"},
+		{ID: 3, Name: "Charlie"},
+	}
+	s := Append(Make[UserSlice](0, 3), users...)
+
+	for i, u := range Backward(s) {
+		if i == 2 {
+			return
+		}
+		if u != users[len(users)-1-i] {
+			t.Errorf("Backward missed a user: %v", u)
+		}
+	}
+}

@@ -61,3 +61,14 @@ func AppendSeq[S Slice[S, E], E any](s S, seq iter.Seq[E]) S {
 	}
 	return s
 }
+
+// Backward returns an iterator over index-value pairs in the slice, traversing it backward with descending indices.
+func Backward[S Slice[S, E], E any](s S) iter.Seq2[int, E] {
+	return func(yield func(int, E) bool) {
+		for i := s.Len() - 1; i >= 0; i-- {
+			if !yield(i, s.Get(i)) {
+				return
+			}
+		}
+	}
+}
