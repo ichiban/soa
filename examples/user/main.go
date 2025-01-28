@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"soa"
+	"github.com/ichiban/soa"
 )
 
 // User is an example struct. We're going to make an SoA slice for it.

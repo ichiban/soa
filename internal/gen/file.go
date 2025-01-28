@@ -8,9 +8,6 @@ import (
 	"go/printer"
 	"go/token"
 	"io"
-	"log"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"text/template"
@@ -21,61 +18,9 @@ import (
 //go:embed soa.go.tmpl
 var soaTemplate string
 
-func Generate(in, out, name string, target ...string) error {
-	f, err := ParseFile(in, target...)
-	if err != nil {
-		return err
-	}
-
-	n, err := template.New("").Parse(name)
-	if err != nil {
-		return err
-	}
-
-	var sb strings.Builder
-	for i := range f.Structs {
-		s := &f.Structs[i]
-
-		sb.Reset()
-		if err := n.Execute(&sb, s.Name); err != nil {
-			return err
-		}
-
-		s.SliceName = sb.String()
-	}
-
-	var w io.Writer
-	if out == "-" {
-		w = os.Stdout
-	} else {
-		o, err := template.New("").Funcs(map[string]any{
-			"dir": filepath.Dir,
-			"stem": func(in string) string {
-				base := filepath.Base(in)
-				return strings.TrimSuffix(base, filepath.Ext(base))
-			},
-			"ext": filepath.Ext,
-		}).Parse(out)
-		if err != nil {
-			log.Fatal(err)
-		}
-		var sb strings.Builder
-		if err := o.Execute(&sb, in); err != nil {
-			return err
-		}
-		out = filepath.Clean(sb.String())
-
-		f, err := os.Create(out)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		w = f
-	}
-
-	_, err = f.WriteTo(w)
-	return err
-}
+var fileTemplate = template.Must(template.New("").Funcs(map[string]any{
+	"join": strings.Join,
+}).Parse(soaTemplate))
 
 type File struct {
 	PackageName string
@@ -84,17 +29,8 @@ type File struct {
 }
 
 func (f *File) WriteTo(w io.Writer) (int64, error) {
-	t, err := template.New("").Funcs(map[string]any{
-		"join": strings.Join,
-	}).Parse(soaTemplate)
-	if err != nil {
-		return 0, err
-	}
-
 	var buf bytes.Buffer
-	if err := t.Execute(&buf, f); err != nil {
-		return 0, err
-	}
+	_ = fileTemplate.Execute(&buf, f)
 
 	b, err := imports.Process("", buf.Bytes(), nil)
 	if err != nil {
@@ -161,7 +97,7 @@ func (v *visitor) Visit(n ast.Node) ast.Visitor {
 
 		t, ok := n.Type.(*ast.StructType)
 		if !ok {
-			return v
+			return nil
 		}
 
 		fs := make([]Field, len(t.Fields.List))

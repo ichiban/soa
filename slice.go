@@ -2,14 +2,14 @@ package soa
 
 import "iter"
 
-// Slice is a structure-of-arrays slice derived from a struct T.
-type Slice[S Slicer[S], T any] interface {
+// Slice is a structure-of-arrays slice derived from a struct E.
+type Slice[S Slicer[S], E any] interface {
 	Slicer[S]
 
 	// Get gets the value of the index. i.e. s[n]
-	Get(int) T
+	Get(int) E
 	// Set sets the value of the index. i.e. s[n] = v
-	Set(int, T)
+	Set(int, E)
 	// Len returns the length of the slice. i.e. len(s)
 	Len() int
 	// Cap returns the capacity of the slice. i.e. cap(s)
@@ -25,14 +25,14 @@ type Slicer[S any] interface {
 }
 
 // Make creates a new Slice.
-func Make[S Slice[S, T], T any](len, cap int) S {
+func Make[S Slice[S, E], E any](len, cap int) S {
 	var s S
 	s = s.Grow(cap)
 	return s.Slice(0, len, cap)
 }
 
 // Append appends elements to a Slice.
-func Append[S Slice[S, T], T any](slice S, elems ...T) S {
+func Append[S Slice[S, E], E any](slice S, elems ...E) S {
 	oldLen := slice.Len()
 	newLen := oldLen + len(elems)
 	s := slice.Grow(max(0, newLen-slice.Cap()))
@@ -44,8 +44,8 @@ func Append[S Slice[S, T], T any](slice S, elems ...T) S {
 }
 
 // All returns an iterator over the Slice.
-func All[S Slice[S, T], T any](slice S) iter.Seq2[int, T] {
-	return func(yield func(int, T) bool) {
+func All[S Slice[S, E], E any](slice S) iter.Seq2[int, E] {
+	return func(yield func(int, E) bool) {
 		for i := 0; i < slice.Len(); i++ {
 			if !yield(i, slice.Get(i)) {
 				return
