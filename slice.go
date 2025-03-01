@@ -90,3 +90,19 @@ func BinarySearchFunc[S Slice[S, E], E, T any](x S, target T, cmp func(E, T) int
 	}
 	return low, low < length && cmp(x.Get(low), target) == 0
 }
+
+// Chunk returns an iterator over chunks.
+func Chunk[S Slice[S, E], E any](s S, n int) iter.Seq[S] {
+	if n < 1 {
+		panic("cannot be less than 1")
+	}
+
+	return func(yield func(S) bool) {
+		for i := 0; i < s.Len(); i += n {
+			end := min(n, s.Len()-i)
+			if !yield(s.Slice(i, i+end, i+end)) {
+				return
+			}
+		}
+	}
+}

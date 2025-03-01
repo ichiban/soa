@@ -1,6 +1,7 @@
 package soa
 
 import (
+	"iter"
 	"reflect"
 	"slices"
 	"testing"
@@ -49,6 +50,20 @@ func (s UserSlice) Grow(n int) UserSlice {
 	return UserSlice{
 		ID:   slices.Grow(s.ID, n),
 		Name: slices.Grow(s.Name, n),
+	}
+}
+
+func take[T any](i iter.Seq[T], n int) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for e := range i {
+			if n == 0 {
+				return
+			}
+			if !yield(e) {
+				return
+			}
+			n--
+		}
 	}
 }
 
@@ -152,5 +167,78 @@ func TestBinarySearchFunc(t *testing.T) {
 	}
 	if !ok {
 		t.Error("BinarySearchFunc didn't find user")
+	}
+}
+
+func TestChunk(t *testing.T) {
+	users := []User{
+		{ID: 1, Name: "Alice"},
+		{ID: 2, Name: "Bob"},
+		{ID: 3, Name: "Charlie"},
+		{ID: 4, Name: "Dan"},
+		{ID: 5, Name: "Eve"},
+		{ID: 6, Name: "Frank"},
+		{ID: 7, Name: "Grace"},
+		{ID: 8, Name: "Heidi"},
+		{ID: 9, Name: "Ivan"},
+		{ID: 10, Name: "Judy"},
+	}
+	s := Append(Make[UserSlice](0, 10), users...)
+
+	tests := []struct {
+		title  string
+		s      UserSlice
+		n      int
+		chunks []UserSlice
+		panics bool
+		size   int
+	}{
+		{title: "empty", s: s, n: 0, chunks: []UserSlice{}, panics: true, size: -1},
+		{title: "ok", s: s, n: 3, chunks: []UserSlice{
+			{
+				ID:   []int{1, 2, 3},
+				Name: []string{"Alice", "Bob", "Charlie"},
+			},
+			{
+				ID:   []int{4, 5, 6},
+				Name: []string{"Dan", "Eve", "Frank"},
+			},
+			{
+				ID:   []int{7, 8, 9},
+				Name: []string{"Grace", "Heidi", "Ivan"},
+			},
+			{
+				ID:   []int{10},
+				Name: []string{"Judy"},
+			},
+		}, size: -1},
+		{title: "ok with size limit", s: s, n: 3, chunks: []UserSlice{
+			{
+				ID:   []int{1, 2, 3},
+				Name: []string{"Alice", "Bob", "Charlie"},
+			},
+			{
+				ID:   []int{4, 5, 6},
+				Name: []string{"Dan", "Eve", "Frank"},
+			},
+		}, size: 2},
+	}
+
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			defer func() {
+				r := recover()
+				if (r != nil) != test.panics {
+					t.Errorf("panic expected: %v", test.panics)
+				}
+			}()
+			var chunks []UserSlice
+			for chunk := range take(Chunk(test.s, test.n), test.size) {
+				chunks = append(chunks, chunk)
+			}
+			if !reflect.DeepEqual(chunks, test.chunks) {
+				t.Errorf("Chunks didn't match: %v != %v", chunks, test.chunks)
+			}
+		})
 	}
 }
