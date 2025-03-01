@@ -242,3 +242,41 @@ func TestChunk(t *testing.T) {
 		})
 	}
 }
+
+func TestClip(t *testing.T) {
+	users := []User{
+		{ID: 1, Name: "Alice"},
+		{ID: 2, Name: "Bob"},
+		{ID: 3, Name: "Charlie"},
+	}
+	s := Append(Make[UserSlice](0, 5), users...)
+
+	tests := []struct {
+		title   string
+		s       UserSlice
+		lenID   int
+		capID   int
+		lenName int
+		capName int
+	}{
+		{title: "ok", s: s, lenID: 3, capID: 3, lenName: 3, capName: 3},
+	}
+
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			clip := Clip(test.s)
+			if len(clip.ID) != test.lenID {
+				t.Errorf("ID didn't match: %v != %v", test.lenID, len(clip.ID))
+			}
+			if cap(clip.ID) != test.capID {
+				t.Errorf("ID didn't match: %v != %v", test.capID, len(clip.ID))
+			}
+			if len(clip.Name) != test.lenName {
+				t.Errorf("Name didn't match: %v != %v", test.lenName, len(clip.Name))
+			}
+			if cap(clip.Name) != test.capName {
+				t.Errorf("Name didn't match: %v != %v", test.capName, len(clip.Name))
+			}
+		})
+	}
+}

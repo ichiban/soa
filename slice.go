@@ -106,3 +106,8 @@ func Chunk[S Slice[S, E], E any](s S, n int) iter.Seq[S] {
 		}
 	}
 }
+
+// Clip removes unused capacity from the slice.
+func Clip[S Slice[S, E], E any](s S) S {
+	return s.Slice(0, s.Len(), s.Len())
+}
