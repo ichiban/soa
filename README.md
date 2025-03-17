@@ -151,9 +151,9 @@ type BazSlice struct {
 
 ## Library
 
-You can manipulate SoA slices with [`github.com/ichiban/soa`](https://pkg.go.dev/github.com/ichiban/soa).
+You can manipulate SoA slices with [the library `github.com/ichiban/soa`](https://pkg.go.dev/github.com/ichiban/soa).
 
-We're going to implement [`slices`-compatible functions](https://pkg.go.dev/slices).
+It implements [`slices`-compatible functions](https://pkg.go.dev/slices).
 
 ## License
 

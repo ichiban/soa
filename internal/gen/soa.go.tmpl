@@ -34,7 +34,13 @@ func (s {{.SliceName}}) Set(i int, t {{.Name}}) {
 }
 
 func (s {{.SliceName}}) Len() int {
-    return len(s.{{with $f := index .Fields 0 }}{{index $f.Names 0}}{{end}})
+    return min(
+    {{- range .Fields}}
+    {{- range .Names}}
+        len(s.{{.}}),
+    {{- end}}
+    {{- end}}
+    )
 }
 
 func (s {{.SliceName}}) Cap() int {
