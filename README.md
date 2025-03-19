@@ -10,7 +10,7 @@
 
 The basic usage is to include the line `//go:generate go run github.com/ichiban/soa/cmd/soagen@latest` in your file with the structs you want to generate SoA slices.
 
-In this example, you can generate a Go source file containing `PointSlice` in `point_soa.go` by executing `go generate ./...`.
+Let's say you have `point.go` containing `Point`, you can generate `point_soa.go` containing `PointSlice` by executing `go generate ./...`.
 
 `point.go`:
 
@@ -39,9 +39,47 @@ type PointSlice struct {
 // And some methods.
 ```
 
-### Specify the SoA slice name pattern
+Now, `PointSlice` works as an alternative to `[]Point`.
 
-You can specify the pattern for the SoA slices with `-name`. It'll replace `{{.}}` with the original struct name.
+```go
+package main
+
+import "fmt"
+
+func main() {
+	// s := make([]Point, 3, 10)
+	var s PointSlice
+	s = s.Grow(10)
+	s = s.Slice(0, 3, s.Cap())
+
+	// s[i] = ...
+	s.Set(0, Point{X: 1, Y: 1})
+	s.Set(1, Point{X: 2, Y: 2})
+	s.Set(2, Point{X: 3, Y: 3})
+
+	for i := 0; i < s.Len(); i++ {
+		// p := s[i]
+		p := s.Get(i)
+
+		fmt.Printf("s[%d] = (%d, %d)\n", i, p.X, p.Y)
+	}
+}
+```
+
+Output:
+
+```
+s[0] = (1, 1)
+s[1] = (2, 2)
+s[2] = (3, 3)
+```
+
+### Advanced Usage
+
+#### Specify the SoA slice name pattern
+
+<details>
+<summary>You can specify the pattern for the SoA slices with `-name`. It'll replace `{{.}}` with the original struct name.</summary>
 
 `point.go`:
 
@@ -70,9 +108,12 @@ type PointCollection struct {
 // And some methods.
 ```
 
-### Specify the output filename
+</details>
 
-You can specify the output filenames with `-out`.
+#### Specify the output filename
+
+<details>
+<summary>You can specify the output filenames with `-out`.</summary>
 
 `point.go`:
 
@@ -101,9 +142,12 @@ type PointSlice struct {
 // And some methods.
 ```
 
-### Specify which structs to be processed
+</details>
 
-If you list struct names, it'll process listed structs only.
+#### Specify which structs to be processed
+
+<details>
+<summary>If you list struct names, it'll process listed structs only.</summary>
 
 `foo_bar_baz.go`:
 
@@ -149,11 +193,38 @@ type BazSlice struct {
 // And some methods.
 ```
 
+</details>
+
 ## Library
 
 You can manipulate SoA slices with [the library `github.com/ichiban/soa`](https://pkg.go.dev/github.com/ichiban/soa).
 
 It implements [`slices`-compatible functions](https://pkg.go.dev/slices).
+
+With the library, the example in Basic Usage can be written with much ease.
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/ichiban/soa"
+)
+
+func main() {
+	// s := make([]Point, 3, 10)
+	s := soa.Make[PointSlice](0, 10)
+
+	// s = append(s, ...)
+	s = soa.Append(s, Point{X: 1, Y: 1}, Point{X: 2, Y: 2}, Point{X: 3, Y: 3})
+
+	// for i, p := range s {
+	for i, p := range soa.All(s) {
+		fmt.Printf("s[%d] = (%d, %d)\n", i, p.X, p.Y)
+	}
+}
+```
 
 ## License
 
