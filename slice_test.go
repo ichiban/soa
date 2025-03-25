@@ -3,6 +3,7 @@ package soa
 import (
 	"iter"
 	"math"
+	"math/rand"
 	"reflect"
 	"slices"
 	"strings"
@@ -1327,4 +1328,124 @@ func TestValues(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkGravity(b *testing.B) {
+	const dt = float32(0.01)
+	const gravity = float32(-9.8)
+	const numParticles = 1_000_000
+
+	particles := make([]Particle, numParticles)
+	for i := range particles {
+		particles[i] = Particle{
+			X:    rand.Float32(),
+			Y:    rand.Float32(),
+			Z:    rand.Float32(),
+			VX:   rand.Float32(),
+			VY:   rand.Float32(),
+			VZ:   rand.Float32(),
+			Mass: rand.Float32(),
+		}
+	}
+
+	particlesSoA := Make[ParticleSlice](numParticles, numParticles)
+	for i := 0; i < numParticles; i++ {
+		particlesSoA.Set(i, Particle{
+			X:    rand.Float32(),
+			Y:    rand.Float32(),
+			Z:    rand.Float32(),
+			VX:   rand.Float32(),
+			VY:   rand.Float32(),
+			VZ:   rand.Float32(),
+			Mass: rand.Float32(),
+		})
+	}
+
+	b.Run("array of structures", func(b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			for i := 0; i < numParticles; i++ {
+				vy := particles[i].VY + gravity*dt
+				particles[i].VY = vy
+				particles[i].Y += vy * dt
+			}
+		}
+	})
+
+	b.Run("structure of arrays", func(b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			for i := 0; i < numParticles; i++ {
+				vy := particlesSoA.VY[i] + gravity*dt
+				particlesSoA.VY[i] = vy
+				particlesSoA.Y[i] += vy * dt
+			}
+		}
+	})
+}
+
+type Particle struct {
+	X, Y, Z    float32
+	VX, VY, VZ float32
+	Mass       float32
+}
+
+type ParticleSlice struct {
+	X, Y, Z    []float32
+	VX, VY, VZ []float32
+	Mass       []float32
+}
+
+var _ Slice[ParticleSlice, Particle] = ParticleSlice{}
+
+func (p ParticleSlice) Slice(low, high, max int) ParticleSlice {
+	return ParticleSlice{
+		X:    p.X[low:high:max],
+		Y:    p.Y[low:high:max],
+		Z:    p.Z[low:high:max],
+		VX:   p.VX[low:high:max],
+		VY:   p.VY[low:high:max],
+		VZ:   p.VZ[low:high:max],
+		Mass: p.Mass[low:high:max],
+	}
+}
+
+func (p ParticleSlice) Grow(n int) ParticleSlice {
+	return ParticleSlice{
+		X:    slices.Grow(p.X, n),
+		Y:    slices.Grow(p.Y, n),
+		Z:    slices.Grow(p.Z, n),
+		VX:   slices.Grow(p.VX, n),
+		VY:   slices.Grow(p.VY, n),
+		VZ:   slices.Grow(p.VZ, n),
+		Mass: slices.Grow(p.Mass, n),
+	}
+}
+
+func (p ParticleSlice) Get(i int) Particle {
+	return Particle{
+		X:    p.X[i],
+		Y:    p.Y[i],
+		Z:    p.Z[i],
+		VX:   p.VX[i],
+		VY:   p.VY[i],
+		VZ:   p.VZ[i],
+		Mass: p.Mass[i],
+	}
+}
+
+func (p ParticleSlice) Set(i int, e Particle) {
+	p.X[i] = e.X
+	p.Y[i] = e.Y
+	p.Z[i] = e.Z
+	p.VX[i] = e.VX
+	p.VY[i] = e.VY
+	p.VZ[i] = e.VZ
+	p.Mass[i] = e.Mass
+}
+
+func (p ParticleSlice) Len() int {
+	return min(len(p.X), len(p.Y), len(p.Z), len(p.VX), len(p.VY), len(p.VZ), len(p.Mass))
+}
+
+func (p ParticleSlice) Cap() int {
+	return min(cap(p.X), cap(p.Y), cap(p.Z), cap(p.VX), cap(p.VY), cap(p.VZ), cap(p.Mass))
 }
