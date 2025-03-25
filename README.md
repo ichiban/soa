@@ -6,9 +6,17 @@
 
 ## Code Generator
 
+### Installation
+
+To install the code generator, add it as [a tool dependency](https://go.dev/doc/modules/managing-dependencies#tools):
+
+```
+go get -tool github.com/ichiban/soa/cmd/soagen
+```
+
 ### Basic Usage
 
-The basic usage is to include the line `//go:generate go run github.com/ichiban/soa/cmd/soagen@latest` in your file with the structs you want to generate SoA slices.
+The basic usage is to include the line `//go:generate go tool soagen` in your file with the structs you want to generate SoA slices.
 
 Let's say you have `point.go` containing `Point`, you can generate `point_soa.go` containing `PointSlice` by executing `go generate ./...`.
 
@@ -17,7 +25,7 @@ Let's say you have `point.go` containing `Point`, you can generate `point_soa.go
 ```go
 package main
 
-//go:generate go run github.com/ichiban/soa/cmd/soagen@latest
+//go:generate go tool soagen
 
 type Point struct {
 	X int
@@ -86,7 +94,7 @@ s[2] = (3, 3)
 ```go
 package main
 
-//go:generate go run github.com/ichiban/soa/cmd/soagen@latest -name "{{.}}Collection"
+//go:generate go tool soagen -name "{{.}}Collection"
 
 type Point struct {
 	X int
@@ -120,7 +128,7 @@ type PointCollection struct {
 ```go
 package main
 
-//go:generate go run github.com/ichiban/soa/cmd/soagen@latest -out point_gen.go
+//go:generate go tool soagen -out point_gen.go
 
 type Point struct {
 	X int
@@ -154,7 +162,7 @@ type PointSlice struct {
 ```go
 package main
 
-//go:generate go run github.com/ichiban/soa/cmd/soagen@latest Foo Baz
+//go:generate go tool soagen Foo Baz
 
 type Foo struct {
 	X int
