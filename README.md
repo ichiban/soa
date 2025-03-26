@@ -221,7 +221,7 @@ import (
 )
 
 func main() {
-	// s := make([]Point, 3, 10)
+	// s := make([]Point, 0, 10)
 	s := soa.Make[PointSlice](0, 10)
 
 	// s = append(s, ...)
